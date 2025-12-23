@@ -72,7 +72,7 @@ set(findall(gcf,'-property','FontSize'),'FontSize',10);
 
 %% 7. Estymacja opóźnienia czasowego (Tau) - Autokorelacja
 max_lag = 500;
-[acf_lor, lags] = autocorr(s_lorenz, 'NumLags', max_lag);
+[acf_lor, lags] = autocorr(s_lorenz);
 
 % Szukamy pierwszego przejścia poniżej progu 1/e
 threshold = 1/exp(1);
@@ -116,7 +116,7 @@ for i = 1:length(signals)
 end
 
 %% 8. Analiza nasycenia - Całka korelacyjna i Wymiar zanurzenia de
-m_range = 1:5;
+m_range = 1:8;
 r_vals = logspace(-2, 1, 20);
 de_values = zeros(1, length(signals)); 
 all_D2 = zeros(length(m_range), length(signals)); % Przechowywanie D2 dla tabeli
@@ -153,7 +153,7 @@ for s = 1:length(signals)
     
     % Wyznaczanie de (nasycenie) - zgodnie z wytycznymi [cite: 20]
     diffs = diff(D2_temp);
-    idx_de = find(diffs < 0.15, 1); % Próg nasycenia
+    idx_de = find(diffs < 0.16, 1); % Próg nasycenia
     if isempty(idx_de)
         de_values(s) = max(m_range); 
     else
@@ -234,3 +234,49 @@ grid on;
 TabelaWynikow = table(sig_names', tau_values', de_values', hurst_values',...
     'VariableNames', {'Sygnal', 'Tau_Opóźnienie', 'de_Zanurzenie', 'Hurst_H'});
 disp(TabelaWynikow);
+
+
+%% Rekonstrukcja przestrzeni fazowej
+n_re=9000;
+for s = 1:length(signals)
+    rec{s}=create_Y(signals{s},n_re,tau_values(s),de_values(s));
+end
+% r_per;
+% r_lorenz;
+% r_chen_int;
+% r_chen_f2;
+% r_chen_f1;
+
+%% 6. Wizualizacja Zrekonstruowanych Atraktoró
+% Tworzymy figurę z trzema podwykresami dla systemów chaotycznych
+
+figure('Name', 'Atraktory Systemów Chaotycznych', 'NumberTitle', 'off');
+
+% --- Atraktor Lorenza ---
+subplot(1, 3, 1);
+plot3(rec{3}(:,1), rec{3}(:,2), rec{3}(:,3), 'r');
+grid on; axis tight;
+title('System Lorenza (Klasyczny)');
+xlabel('x(t)'); ylabel('y(t)'); zlabel('z(t)');
+view(45, 30); % Ustawienie kąta patrzenia dla lepszej widoczności
+
+% --- Atraktor Chena (Całkowity q=1) ---
+subplot(1, 3, 2);
+plot3(rec{4}(:,1), rec{4}(:,2), rec{4}(:,3), 'b');
+grid on; axis tight;
+title('System Chena (q = 1.0)');
+xlabel('x(t)'); ylabel('y(t)'); zlabel('z(t)');
+view(45, 30);
+
+% --- Atraktor Chena (Ułamkowy q=0.95) ---
+subplot(1, 3, 3);
+plot3(rec{6}(:,1), rec{6}(:,2), rec{6}(:,3), 'g');
+grid on; axis tight;
+title('System Chena (q = 0.95)');
+xlabel('x(t)'); ylabel('y(t)'); zlabel('z(t)');
+view(45, 30);
+
+% Poprawa estetyki wykresów
+set(findall(gcf,'-property','FontSize'),'FontSize',10);
+
+
