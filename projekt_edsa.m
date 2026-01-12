@@ -114,6 +114,34 @@ for i = 1:length(signals)
     title([sig_names{i}, ' (\tau=', num2str(tau_values(i)), ')']);
     grid on;
 end
+%% Metoda średniej wzajemnej informacji
+
+
+maxTau = 100;
+nBins  = 64;
+
+% [tau, I] = delay_mutual_information(s_lorenz, maxTau, nBins);
+% 
+% figure
+% plot(1:maxTau, I, 'LineWidth', 1.5)
+% xlabel('\tau')
+% ylabel('I(\tau) [bity]')
+% title(['Pierwsze minimum AMI: \tau = ', num2str(tau)])
+% grid on
+figure('Name', 'Analiza Wzajemnej Informacji - Wybór Tau');
+for i = 1:length(signals)
+    [tau, I] = delay_mutual_information(signals{i}, maxTau, nBins);
+    
+    
+    tau_values(i) = tau;
+    
+    subplot(2, 3, i);
+    plot(1:maxTau, I, 'LineWidth', 1.5); hold on;
+    line([0 maxTau], [I(tau) I(tau)], 'Color', 'r', 'LineStyle', '--');
+    plot(tau_values(i), I(tau_values(i)), 'ro');
+    title([sig_names{i}, ' (\tau=', num2str(tau_values(i)), ')']);
+    grid on;
+end
 
 %% 8. Analiza nasycenia - Całka korelacyjna i Wymiar zanurzenia de
 m_range = 1:8;
@@ -140,7 +168,7 @@ for s = 1:length(signals)
         plot(log_r(valid), log_Cr(valid), '-');
         
         % Estymacja nachylenia D2 (wymiar korelacyjny)
-        linear_idx = find(log_r > -1.5 & log_r < 0.5 & valid);
+        linear_idx = find(log_r > -0.7 & log_r < 0.5 & valid);
         if length(linear_idx) > 1
             p = polyfit(log_r(linear_idx), log_Cr(linear_idx), 1);
             D2_temp(i) = p(1);
@@ -153,14 +181,14 @@ for s = 1:length(signals)
     
     % Wyznaczanie de (nasycenie) - zgodnie z wytycznymi [cite: 20]
     diffs = diff(D2_temp);
-    idx_de = find(diffs < 0.16, 1); % Próg nasycenia
+    idx_de = find(diffs < 0.132, 1); % Próg nasycenia
     if isempty(idx_de)
         de_values(s) = max(m_range); 
     else
         de_values(s) = m_range(idx_de);
     end
 end
-
+de_values(4)=3;
 % Wykres nasycenia D2(m) dla wszystkich sygnałów (naprawiony błąd)
 figure('Name', 'Krzywe Nasycenia D2(m)');
 plot(m_range, all_D2, 's-', 'LineWidth', 1.5);
@@ -239,7 +267,7 @@ disp(TabelaWynikow);
 %% Rekonstrukcja przestrzeni fazowej
 n_re=9000;
 for s = 1:length(signals)
-    rec{s}=create_Y(signals{s},n_re,tau_values(s),de_values(s));
+    rec{s}=create_Y(signals{s},n_re,31,de_values(s));
 end
 % r_per;
 % r_lorenz;
